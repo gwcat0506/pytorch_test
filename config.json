@@ -1,6 +1,7 @@
 {
     "name": "TimeSeries_LSTM",
     "n_gpu": 1,
+    "resume": "saved/models/TimeSeries_LSTM/1212_131331/model_best.pth",
 
     "arch": {
         "type": "LSTM",
@@ -12,7 +13,7 @@
         }
     },
     "data_loader": {
-        "type": "TimeseriesDatasetLoader", 
+        "type": "TimeSeriesDatasetLoader", 
         
         "args":{
             "data_dir": "data/TimeSeries/abilene_ATL_len41759.csv",
