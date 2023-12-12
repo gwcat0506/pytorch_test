@@ -2,6 +2,7 @@ import argparse
 import collections
 import torch
 import numpy as np
+import pandas as pd
 import data_loader.data_loaders as module_data
 import model.loss as module_loss
 import model.metric as module_metric
@@ -21,9 +22,19 @@ np.random.seed(SEED)
 def main(config):
     logger = config.get_logger('train')
 
-    # setup data_loader instances
-    data_loader = config.init_obj('data_loader', module_data)
-    valid_data_loader = data_loader.split_validation()
+    # 데이터 셋 로드 및 scaling
+    df = pd.read_csv(config["data_loader"]['args']["data_dir"])
+    logger.info(df['traffic'])
+    scaled_df = module_data.apply_scaler(df)
+    logger.info(scaled_df['traffic'])
+
+    # train/valid split
+    y_train, y_test = module_data.split_data(scaled_df, config['data_loader']['args']['split_ratio'])
+    print("Train | Test :", y_train.shape, y_test.shape)
+    
+    # loader로 정의 
+    train_loader = module_data.get_loader(y_train, config['data_loader']['args']['window'], config['data_loader']['args']['batch_size'], False)
+    valid_loader = module_data.get_loader(y_test, config['data_loader']['args']['window'], config['data_loader']['args']['batch_size'], False)
 
     # build model architecture, then print to console
     model = config.init_obj('arch', module_arch)
@@ -47,8 +58,8 @@ def main(config):
     trainer = Trainer(model, criterion, metrics, optimizer,
                       config=config,
                       device=device,
-                      data_loader=data_loader,
-                      valid_data_loader=valid_data_loader,
+                      data_loader=train_loader,
+                      valid_data_loader=valid_loader,
                       lr_scheduler=lr_scheduler)
 
     trainer.train()
